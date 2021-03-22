@@ -44,9 +44,9 @@ parser.add_argument("--path_dataset", required=True, help = "Path to directory t
 parser.add_argument("--model_previous", default=None)
 parser.add_argument("--optim_previous", default=None)
 
-parser.add_argument("save_sample_every", default = 1000)
-parser.add_argument("save_checkpoint_every", default = 5000)
-parser.add_argument("save_likelihood_every", default = 5000)
+parser.add_argument("--save_sample_every", default = 1000)
+parser.add_argument("--save_checkpoint_every", default = 5000)
+parser.add_argument("--save_likelihood_every", default = 5000)
 
 
 
