@@ -13,6 +13,9 @@ from torchvision import datasets, transforms, utils
 
 from model import Glow
 
+
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 parser = argparse.ArgumentParser(description="Glow trainer")
@@ -35,33 +38,11 @@ parser.add_argument("--lr", default=1e-4, type=float, help="learning rate")
 parser.add_argument("--img_size", default=64, type=int, help="image size")
 parser.add_argument("--temp", default=0.7, type=float, help="temperature of sampling")
 parser.add_argument("--n_sample", default=20, type=int, help="number of samples")
-parser.add_argument("path", metavar="PATH", type=str, help="Path to image directory")
+parser.add_argument("--path", metavar="PATH", type=str, help="Path to get results and models")
+parser.add_argument("--path_dataset", required=True, help = "Path to directory to save images")
 
 
-def sample_data(path, batch_size, image_size):
-    transform = transforms.Compose(
-        [
-            transforms.Resize(image_size),
-            transforms.CenterCrop(image_size),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-        ]
-    )
 
-    dataset = datasets.ImageFolder(path, transform=transform)
-    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=4)
-    loader = iter(loader)
-
-    while True:
-        try:
-            yield next(loader)
-
-        except StopIteration:
-            loader = DataLoader(
-                dataset, shuffle=True, batch_size=batch_size, num_workers=4
-            )
-            loader = iter(loader)
-            yield next(loader)
 
 
 def calc_z_shapes(n_channel, input_size, n_flow, n_block):
@@ -92,9 +73,39 @@ def calc_loss(log_p, logdet, image_size, n_bins):
         (logdet / (log(2) * n_pixel)).mean(),
     )
 
+def get_ImageFolder_dataset(path):
+    dataset = datasets.ImageFolder(path, transform=default_transform)
 
-def train(args, model, optimizer):
-    dataset = iter(sample_data(args.path, args.batch, args.img_size))
+def sample_data(dataset, batch_size, image_size):
+
+    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=4)
+    loader = iter(loader)
+
+    while True:
+        try:
+            yield next(loader)
+
+        except StopIteration:
+            loader = DataLoader(
+                dataset, shuffle=True, batch_size=batch_size, num_workers=4
+            )
+            loader = iter(loader)
+            yield next(loader)
+
+def train(dataset, args, model, optimizer, path = "" , test_image_temoin = None, test_image_critic = None):
+    if not os.path.exists(path):
+      os.makedirs(path)
+
+
+    dataset_loader = iter(sample_data(dataset, args.batch, args.image_size))
+
+    if test_image_temoin is not None and test_image_critic is not None :
+      testing = True
+      test_image_temoin = test_image_temoin.to(device)
+      test_image_critic = test_image_critic.to(device)
+    else :
+      testing = False
+
     n_bins = 2.0 ** args.n_bits
 
     z_sample = []
@@ -140,28 +151,83 @@ def train(args, model, optimizer):
                 f"Loss: {loss.item():.5f}; logP: {log_p.item():.5f}; logdet: {log_det.item():.5f}; lr: {warmup_lr:.7f}"
             )
 
-            if i % 100 == 0:
+            if i % 10 == 0:
+                path_sample = os.path.join(path, 'sample')
+                if not os.path.exists(path_sample):
+                  os.makedirs(path_sample)
                 with torch.no_grad():
                     utils.save_image(
                         model_single.reverse(z_sample).cpu().data,
-                        f"sample/{str(i + 1).zfill(6)}.png",
+                        os.path.join(path_sample,f"{str(i + 1).zfill(6)}.png"),
                         normalize=True,
                         nrow=10,
                         range=(-0.5, 0.5),
                     )
 
-            if i % 10000 == 0:
+            if i % 10 == 0:
+                path_checkpoint = os.path.join(path, "checkpoint")
+                if not os.path.exists(path_checkpoint):
+                  os.makedirs(path_checkpoint)
                 torch.save(
-                    model.state_dict(), f"checkpoint/model_{str(i + 1).zfill(6)}.pt"
+                    model.state_dict(), os.path.join(path_checkpoint,f"model_{str(i + 1).zfill(6)}.pt")
                 )
                 torch.save(
-                    optimizer.state_dict(), f"checkpoint/optim_{str(i + 1).zfill(6)}.pt"
+                    optimizer.state_dict(), os.path.join(path_checkpoint,f"optim_{str(i + 1).zfill(6)}.pt")
                 )
+            if i%10 ==0:
+                path_likelihood = os.path.join(path, "likelihood")
+                if not os.path.exists(path_likelihood):
+                  os.makedirs(path_likelihood)
+                save_likelihood(path_likelihood, i, model, test_image_temoin, test_image_critic, nb_step = 0)
+
+            # if i % 100 == 0:
+            #     with torch.no_grad():
+            #         utils.save_image(
+            #             model_single.reverse(z_sample).cpu().data,
+            #             f"sample/{str(i + 1).zfill(6)}.png",
+            #             normalize=True,
+            #             nrow=10,
+            #             range=(-0.5, 0.5),
+            #         )
+
+            # if i % 10000 == 0:
+            #     torch.save(
+            #         model.state_dict(), f"checkpoint/model_{str(i + 1).zfill(6)}.pt"
+            #     )
+            #     torch.save(
+            #         optimizer.state_dict(), f"checkpoint/optim_{str(i + 1).zfill(6)}.pt"
+            #     )
 
 
 if __name__ == "__main__":
+
+
+    
+
     args = parser.parse_args()
-    print(args)
+
+
+        
+    default_transform = transforms.Compose(
+        [
+            transforms.Resize(args.img_size),
+            transforms.CenterCrop(args.img_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+        ]
+    )
+    # mnist_dataset = 
+    cifar_dataset_train = datasets.CIFAR10(args.path_dataset, transform = default_transform, download=True)
+    cifar_dataset_test = datasets.CIFAR10(args.path_dataset, transform = default_transform, train=False, download = True)
+    dataloader_cifar_test = torch.utils.data.DataLoader(cifar_dataset_test, batch_size = 100)
+    test_image_temoin = next(iter(dataloader_cifar_test))[0]
+
+    svhn_dataset_test = datasets.SVHN(args.path_dataset, transform = default_transform, download = True)
+    dataloader_svhn = torch.utils.data.DataLoader(svhn_dataset_test, batch_size = 100)
+    test_image_critic = next(iter(dataloader_svhn))[0]
+
+
+
 
     model_single = Glow(
         3, args.n_flow, args.n_block, affine=args.affine, conv_lu=not args.no_lu
@@ -172,4 +238,5 @@ if __name__ == "__main__":
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    train(args, model, optimizer)
+    
+    train(cifar_dataset_train, args, model, optimizer, path = args.path, test_image_temoin = test_image_temoin, test_image_critic = test_image_critic)
