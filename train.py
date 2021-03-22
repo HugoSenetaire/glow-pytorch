@@ -239,13 +239,13 @@ if __name__ == "__main__":
         3, args.n_flow, args.n_block, affine=args.affine, conv_lu=not args.no_lu
     )
 
-    if args.model_previous is not None :
-        model.load_state_dict(torch.load(args.model_previous))
 
     model = nn.DataParallel(model_single)
     # model = model_single
     model = model.to(device)
-
+    
+    if args.model_previous is not None :
+        model.load_state_dict(torch.load(args.model_previous))
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     if args.optimizer_previous is not None :
         optimizer.load_state_dict(torch.load(args.optimizer_previous))
