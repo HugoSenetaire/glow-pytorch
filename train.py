@@ -247,8 +247,8 @@ if __name__ == "__main__":
     if args.model_previous is not None :
         model.load_state_dict(torch.load(args.model_previous))
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    if args.optimizer_previous is not None :
-        optimizer.load_state_dict(torch.load(args.optimizer_previous))
+    if args.optim_previous is not None :
+        optimizer.load_state_dict(torch.load(args.optim_previous))
 
     
     train(cifar_dataset_train, args, model, optimizer, path = args.path, test_image_temoin = test_image_temoin, test_image_critic = test_image_critic)
