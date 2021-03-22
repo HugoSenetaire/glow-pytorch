@@ -44,6 +44,10 @@ parser.add_argument("--path_dataset", required=True, help = "Path to directory t
 parser.add_argument("--model_previous", default=None)
 parser.add_argument("--optim_previous", default=None)
 
+parser.add_argument("save_sample_every", default = 1000)
+parser.add_argument("save_checkpoint_every", default = 5000)
+parser.add_argument("save_likelihood_every", default = 5000)
+
 
 
 
@@ -153,7 +157,7 @@ def train(dataset, args, model, optimizer, path = "" , test_image_temoin = None,
                 f"Loss: {loss.item():.5f}; logP: {log_p.item():.5f}; logdet: {log_det.item():.5f}; lr: {warmup_lr:.7f}"
             )
 
-            if i % 10 == 0:
+            if i % args.save_sample_every == 0:
                 path_sample = os.path.join(path, 'sample')
                 if not os.path.exists(path_sample):
                   os.makedirs(path_sample)
@@ -166,7 +170,7 @@ def train(dataset, args, model, optimizer, path = "" , test_image_temoin = None,
                         range=(-0.5, 0.5),
                     )
 
-            if i % 10 == 0:
+            if i % args.save_checkpoint_every == 0:
                 path_checkpoint = os.path.join(path, "checkpoint")
                 if not os.path.exists(path_checkpoint):
                   os.makedirs(path_checkpoint)
@@ -176,7 +180,7 @@ def train(dataset, args, model, optimizer, path = "" , test_image_temoin = None,
                 torch.save(
                     optimizer.state_dict(), os.path.join(path_checkpoint,f"optim_{str(i + 1).zfill(6)}.pt")
                 )
-            if i%10 ==0:
+            if i%args.save_likelihood_every ==0:
                 path_likelihood = os.path.join(path, "likelihood")
                 if not os.path.exists(path_likelihood):
                   os.makedirs(path_likelihood)
