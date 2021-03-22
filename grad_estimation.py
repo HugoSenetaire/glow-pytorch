@@ -59,7 +59,7 @@ def save_likelihood(path_likelihood, i, model, test_image_temoin, test_image_cri
     plt.close(figure)
 
     figure = plt.figure(0)
-    plt.box_plot([bar_temoin, bar_critic], labels = ["CIFAR", "SVHN"])
+    plt.boxplot([bar_temoin, bar_critic], labels = ["CIFAR", "SVHN"])
     plt.savefig(os.path.join(path_likelihood, f"box_plot_likelihood_{i}"))
     plt.close(figure)
     
@@ -71,6 +71,6 @@ def save_likelihood(path_likelihood, i, model, test_image_temoin, test_image_cri
 
     
     figure = plt.figure(0)
-    plt.box_plot([grad_temoin, grad_critic], labels = ["CIFAR", "SVHN"])
+    plt.boxplot([grad_temoin, grad_critic], labels = ["CIFAR", "SVHN"])
     plt.savefig(os.path.join(path_likelihood, f"box_plot_grad_{i}"))
     plt.close(figure)
