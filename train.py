@@ -25,7 +25,7 @@ parser.add_argument("--iter", default=200000, type=int, help="maximum iterations
 parser.add_argument(
     "--n_flow", default=32, type=int, help="number of flows in each block"
 )
-parser.add_argument("--n_block", default=4, type=int, help="number of blocks")
+parser.add_argument("--n_block", default=3, type=int, help="number of blocks")
 parser.add_argument(
     "--no_lu",
     action="store_true",
@@ -34,7 +34,7 @@ parser.add_argument(
 parser.add_argument(
     "--affine", action="store_true", help="use affine coupling instead of additive"
 )
-parser.add_argument("--n_bits", default=5, type=int, help="number of bits")
+parser.add_argument("--n_bits", default=8, type=int, help="number of bits")
 parser.add_argument("--lr", default=1e-4, type=float, help="learning rate")
 parser.add_argument("--img_size", default=64, type=int, help="image size")
 parser.add_argument("--temp", default=0.7, type=float, help="temperature of sampling")
@@ -233,6 +233,11 @@ if __name__ == "__main__":
     model_single = Glow(
         3, args.n_flow, args.n_block, affine=args.affine, conv_lu=not args.no_lu
     )
+
+    if args.model_previous is not None :
+        model.load_state_dict(torch.load(args.model_previous))
+    if args.optimizer_previous is not None :
+        optimizer.load_state_dict(torch.load(args.optimizer_previous))
     model = nn.DataParallel(model_single)
     # model = model_single
     model = model.to(device)
