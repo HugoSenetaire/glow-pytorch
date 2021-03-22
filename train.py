@@ -41,7 +41,8 @@ parser.add_argument("--temp", default=0.7, type=float, help="temperature of samp
 parser.add_argument("--n_sample", default=20, type=int, help="number of samples")
 parser.add_argument("--path", metavar="PATH", type=str, help="Path to get results and models")
 parser.add_argument("--path_dataset", required=True, help = "Path to directory to save images")
-
+parser.add_argument("--model_previous", default=None)
+parser.add_argument("--optim_previous", default=None)
 
 
 
@@ -236,13 +237,14 @@ if __name__ == "__main__":
 
     if args.model_previous is not None :
         model.load_state_dict(torch.load(args.model_previous))
-    if args.optimizer_previous is not None :
-        optimizer.load_state_dict(torch.load(args.optimizer_previous))
+
     model = nn.DataParallel(model_single)
     # model = model_single
     model = model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    if args.optimizer_previous is not None :
+        optimizer.load_state_dict(torch.load(args.optimizer_previous))
 
     
     train(cifar_dataset_train, args, model, optimizer, path = args.path, test_image_temoin = test_image_temoin, test_image_critic = test_image_critic)
