@@ -98,7 +98,7 @@ def train(dataset, args, model, optimizer, path = "" , test_image_temoin = None,
       os.makedirs(path)
 
 
-    dataset_loader = iter(sample_data(dataset, args.batch, args.image_size))
+    dataset_loader = iter(sample_data(dataset, args.batch, args.img_size))
 
     if test_image_temoin is not None and test_image_critic is not None :
       testing = True
