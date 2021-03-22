@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
+import numpy as np
 from torch import autograd
 
 def get_likelihood(model, image):
