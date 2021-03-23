@@ -8,7 +8,7 @@ from torch import autograd
 def get_likelihood(model, image):
 
   log_p, logdet, _ = model(image)
-  likelihood = log_p+logdet
+  likelihood = log_p
   return likelihood
 
 # def get_grad_likelihood(model, test_image):
